@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>코인 구매 회원 관리</title>
+<style>
+  :root{
+    --bg:#f4f6fa; --card:#fff; --text:#1d2433; --sub:#6b7488; --line:#e3e7ef;
+    --primary:#2f6bff; --primary-d:#1f54d6; --danger:#e5484d;
+    --up:#e5484d; --down:#2f6bff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;background:var(--bg);color:var(--text)}
+  header{background:#111a2e;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  header h1{margin:0;font-size:20px}
+  .wrap{max-width:1200px;margin:0 auto;padding:20px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+  .card{background:var(--card);border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .card .l{font-size:13px;color:var(--sub)}
+  .card .v{font-size:22px;font-weight:700;margin-top:6px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar input[type=search]{flex:1;min-width:200px}
+  input,select,textarea{font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--text);width:100%}
+  textarea{resize:vertical;min-height:60px}
+  input:focus,select:focus,textarea:focus{outline:2px solid #cfdcff;border-color:var(--primary)}
+  button{font:inherit;cursor:pointer;border:0;border-radius:8px;padding:9px 14px;background:var(--primary);color:#fff;font-weight:600}
+  button:hover{background:var(--primary-d)}
+  button.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
+  button.ghost:hover{background:#f0f3f9}
+  header button.ghost{background:transparent;color:#fff;border-color:#3a4766}
+  header button.ghost:hover{background:#1e2a47}
+  button.danger{background:var(--danger)}
+  button.sm{padding:5px 9px;font-size:13px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px}
+  .tabs button{background:#e6eaf3;color:var(--sub)}
+  .tabs button.on{background:var(--primary);color:#fff}
+  .table-card{background:var(--card);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:auto}
+  table{width:100%;border-collapse:collapse;min-width:820px}
+  th,td{padding:11px 13px;text-align:left;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+  th{background:#f8f9fc;color:var(--sub);font-weight:600;user-select:none}
+  th.s{cursor:pointer}
+  td.num,th.num{text-align:right}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#fafbff}
+  .empty{padding:36px;text-align:center;color:var(--sub)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600}
+  .g-VIP{background:#fff1d6;color:#a86400}
+  .g-Gold{background:#fff8c9;color:#8a7200}
+  .g-일반{background:#e8edf7;color:#4a5670}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .modal-bg{position:fixed;inset:0;background:rgba(10,16,30,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+  .modal-bg.open{display:flex}
+  .modal{background:#fff;border-radius:14px;width:100%;max-width:580px;max-height:92vh;overflow:auto;padding:22px}
+  .modal.wide{max-width:860px}
+  .modal h2{margin:0 0 14px;font-size:18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:13px;color:var(--sub);margin-bottom:5px}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  .total-box{background:#f0f5ff;border-radius:8px;padding:10px 12px;font-weight:700;text-align:right}
+  .muted{color:var(--sub);font-size:13px}
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:14px;margin-top:16px}
+  .chart-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .chart-card h3{margin:0 0 10px;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .chart-card h3 select{width:auto;padding:4px 8px}
+  .chart-card svg{width:100%;height:auto;display:block}
+  #auth{position:fixed;inset:0;background:linear-gradient(135deg,#111a2e,#26345c);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}
+  .auth-box{background:#fff;border-radius:16px;padding:30px;width:100%;max-width:380px}
+  .auth-box h2{margin:0 0 6px}
+  .auth-box .err{color:var(--danger);font-size:13px;min-height:18px;margin:6px 0}
+  .auth-box button{width:100%;margin-top:6px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}.charts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="auth">
+  <div class="auth-box">
+    <h2 id="authTitle">로그인</h2>
+    <p class="muted" id="authDesc"></p>
+    <div class="field"><label>아이디</label><input id="aId" autocomplete="username"></div>
+    <div class="field"><label>비밀번호</label><input id="aPw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()"></div>
+    <div class="field" id="aPw2Wrap" style="display:none"><label>비밀번호 확인</label><input id="aPw2" type="password" onkeydown="if(event.key==='Enter')authSubmit()"></div>
+    <div class="err" id="aErr"></div>
+    <button onclick="authSubmit()" id="aBtn">로그인</button>
+  </div>
+</div>
+
+<header>
+  <h1>🪙 코인 구매 회원 관리</h1>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="muted" id="whoami" style="color:#aab4cc"></span>
+    <button class="ghost" onclick="exportCSV()">CSV 내보내기</button>
+    <button class="ghost" onclick="exportJSON()">백업(JSON)</button>
+    <button class="ghost" onclick="$('importFile').click()">복원</button>
+    <input type="file" id="importFile" accept=".json" hidden onchange="importJSON(event)">
+    <button class="ghost" onclick="openPw()">비밀번호 변경</button>
+    <button class="ghost" onclick="logout()">로그아웃</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <button id="tabBtnM" class="on" onclick="showTab('M')">회원 관리</button>
+    <button id="tabBtnD" onclick="showTab('D')">시세 · 수익률</button>
+  </div>
+
+  <!-- 회원 관리 탭 -->
+  <div id="tabM">
+    <div class="cards">
+      <div class="card"><div class="l">전체 회원</div><div class="v" id="sMembers">0</div></div>
+      <div class="card"><div class="l">총 구매 건수</div><div class="v" id="sCount">0</div></div>
+      <div class="card"><div class="l">총 구매 금액</div><div class="v" id="sAmount">$0.00</div></div>
+      <div class="card"><div class="l">최다 구매 회원</div><div class="v" id="sTop" style="font-size:18px">-</div></div>
+    </div>
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="이름, 닉네임, 연락처, 이메일, 추천인, 메모 검색" oninput="renderMembers()">
+      <select id="gradeFilter" onchange="renderMembers()" style="width:130px">
+        <option value="">전체 등급</option><option>일반</option><option>Gold</option><option>VIP</option>
+      </select>
+      <button onclick="openMember()">+ 회원 등록</button>
+      <button class="ghost" onclick="openPurchase()">+ 구매 기록</button>
+    </div>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th class="s" onclick="sortBy('name')">이름 ↕</th>
+            <th class="s" onclick="sortBy('nick')">닉네임 ↕</th>
+            <th>연락처</th>
+            <th class="s" onclick="sortBy('grade')">등급 ↕</th>
+            <th class="s" onclick="sortBy('ref')">추천인 ↕</th>
+            <th class="s" onclick="sortBy('first')">최초 구매일 ↕</th>
+            <th class="num s" onclick="sortBy('count')">횟수 ↕</th>
+            <th class="num s" onclick="sortBy('total')">투자금 ↕</th>
+            <th class="num s" onclick="sortBy('rate')">수익률 ↕</th>
+            <th>관리</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="empty" style="display:none">등록된 회원이 없습니다. "+ 회원 등록"을 눌러 시작하세요.</div>
+    </div>
+    <p class="muted">데이터는 이 브라우저(localStorage)에만 저장됩니다. 정기적으로 "백업(JSON)"을 해두세요.</p>
+  </div>
+
+  <!-- 시세·수익률 탭 -->
+  <div id="tabD" style="display:none">
+    <div class="toolbar">
+      <button onclick="refreshPrices()" id="refreshBtn">시세 새로고침</button>
+      <button class="ghost" onclick="openAve()">AVE API 키 설정</button>
+      <span class="muted" id="priceStatus"></span>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="l">총 투자금</div><div class="v" id="dCost">-</div></div>
+      <div class="card"><div class="l">현재 평가금액</div><div class="v" id="dValue">-</div></div>
+      <div class="card"><div class="l">평가손익</div><div class="v" id="dPnl">-</div></div>
+      <div class="card"><div class="l">수익률</div><div class="v" id="dRate">-</div></div>
+    </div>
+    <div class="table-card">
+      <table style="min-width:900px">
+        <thead><tr>
+          <th>코인</th><th class="num">보유수량</th><th class="num">평균매수가</th><th class="num">현재가</th>
+          <th class="num">투자금</th><th class="num">평가금액</th><th class="num">손익</th><th class="num">수익률</th><th>시세 출처</th>
+        </tr></thead>
+        <tbody id="coinBody"></tbody>
+      </table>
+      <div class="empty" id="coinEmpty" style="display:none">구매 기록이 없습니다.</div>
+    </div>
+    <p class="muted">시세는 <b>AVE(Ave.ai) Data API</b>의 USD 가격이며, 모든 금액은 달러($)로 표시됩니다. 구매 단가도 달러로 입력하세요. AVE는 온chain(DEX) 토큰 데이터라 같은 심볼의 토큰이 여러 개일 수 있습니다. 심볼 검색 시 시가총액이 가장 큰 토큰을 자동 선택하며, 출처 칸에 체인이 표시됩니다. 다른 토큰을 쓰려면 "토큰 지정"에 토큰주소-체인을 입력하고, 시세를 못 가져오면 "직접입력"을 사용하세요. 상승·이익은 빨강, 하락·손실은 파랑입니다.</p>
+    <div class="charts">
+      <div class="chart-card"><h3>코인별 수익률 (%)</h3><div id="chRate"></div></div>
+      <div class="chart-card"><h3>코인별 투자금 vs 평가금액</h3><div id="chVal"></div></div>
+      <div class="chart-card"><h3>회원별 수익률 (%)</h3><div id="chMember"></div></div>
+      <div class="chart-card"><h3><span>최근 30일 가격 · 평균매수가</span><select id="histCoin" onchange="drawHistory()"></select></h3><div id="chHist"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 회원 등록/수정 -->
+<div class="modal-bg" id="memberModal">
+  <div class="modal">
+    <h2 id="memberTitle">회원 등록</h2>
+    <input type="hidden" id="mId">
+    <div class="grid2">
+      <div class="field"><label>이름 *</label><input id="mName"></div>
+      <div class="field"><label>닉네임</label><input id="mNick"></div>
+      <div class="field"><label>연락처</label><input id="mPhone" placeholder="010-0000-0000"></div>
+      <div class="field"><label>이메일</label><input id="mEmail" type="email"></div>
+      <div class="field"><label>등급</label>
+        <select id="mGrade"><option>일반</option><option>Gold</option><option>VIP</option></select>
+      </div>
+      <div class="field"><label>추천인</label><select id="mRef"></select></div>
+      <div class="field"><label>최초 구매일</label><input id="mFirst" type="date"></div>
+    </div>
+    <div class="field"><label>메모</label><textarea id="mMemo"></textarea></div>
+    <div class="actions">
+      <button class="ghost" onclick="closeModal('memberModal')">취소</button>
+      <button onclick="saveMember()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 구매 기록 -->
+<div class="modal-bg" id="purchaseModal">
+  <div class="modal">
+    <h2>구매 기록 추가</h2>
+    <div class="field"><label>회원 *</label><select id="pMember"></select></div>
+    <div class="grid2">
+      <div class="field"><label>코인</label>
+        <select id="pCoin" onchange="coinChanged()">
+          <option>BTC</option><option>ETH</option><option>XRP</option><option>SOL</option>
+          <option>USDT</option><option>DOGE</option><option value="기타">기타(직접입력)</option>
+        </select>
+      </div>
+      <div class="field" id="pCustomWrap" style="display:none"><label>코인 심볼</label><input id="pCustom" placeholder="예: ADA"></div>
+      <div class="field"><label>수량 *</label><input id="pQty" type="number" step="any" min="0" oninput="calcTotal()"></div>
+      <div class="field"><label>매수 단가(USD) *</label><input id="pPrice" type="number" step="any" min="0" oninput="calcTotal()"></div>
+      <div class="field"><label>구매일</label><input id="pDate" type="date"></div>
+    </div>
+    <div class="field"><label>메모</label><input id="pMemo" placeholder="거래소, 결제수단 등"></div>
+    <div class="total-box">합계: <span id="pTotal">$0.00</span></div>
+    <div class="actions">
+      <button class="ghost" onclick="closeModal('purchaseModal')">취소</button>
+      <button onclick="savePurchase()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 상세 -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal wide">
+    <h2 id="dTitle"></h2>
+    <div id="dInfo" class="muted" style="margin-bottom:12px;line-height:1.6"></div>
+    <div class="table-card" style="box-shadow:none;border:1px solid var(--line)">
+      <table style="min-width:720px">
+        <thead><tr><th>일자</th><th>코인</th><th class="num">수량</th><th class="num">매수가</th><th class="num">투자금</th><th class="num">현재 평가</th><th class="num">수익률</th><th>메모</th><th></th></tr></thead>
+        <tbody id="dBody"></tbody>
+      </table>
+      <div class="empty" id="dEmpty" style="display:none">구매 내역이 없습니다.</div>
+    </div>
+    <div class="actions">
+      <button class="ghost" onclick="openPurchase(currentDetail)">+ 구매 기록</button>
+      <button class="ghost" onclick="closeModal('detailModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- AVE API 설정 -->
+<div class="modal-bg" id="aveModal">
+  <div class="modal" style="max-width:460px">
+    <h2>AVE API 키 설정</h2>
+    <p class="muted" style="line-height:1.6">시세 조회에는 AVE Cloud의 API 키가 필요합니다. <a href="https://cloud.ave.ai/register" target="_blank" rel="noopener">cloud.ave.ai</a>에서 가입하면 무료 키를 받을 수 있습니다.
+    키는 이 브라우저(localStorage)에만 저장되며, 파일을 다른 사람과 공유할 때는 키가 함께 넘어가지 않지만 이 PC를 쓰는 사람은 볼 수 있습니다.</p>
+    <div class="field"><label>API 키 (X-API-KEY)</label><input id="aveKeyInput" type="password" autocomplete="off"></div>
+    <div class="actions">
+      <button class="ghost" onclick="closeModal('aveModal')">취소</button>
+      <button onclick="saveAve()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 비밀번호 변경 -->
+<div class="modal-bg" id="pwModal">
+  <div class="modal" style="max-width:380px">
+    <h2>비밀번호 변경</h2>
+    <div class="field"><label>현재 비밀번호</label><input id="pwOld" type="password"></div>
+    <div class="field"><label>새 비밀번호 (4자 이상)</label><input id="pwNew" type="password"></div>
+    <div class="field"><label>새 비밀번호 확인</label><input id="pwNew2" type="password"></div>
+    <div class="err" id="pwErr" style="color:var(--danger);font-size:13px;min-height:18px"></div>
+    <div class="actions">
+      <button class="ghost" onclick="closeModal('pwModal')">취소</button>
+      <button onclick="changePw()">변경</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = 'coinMemberManager.v1';
+const AUTH_KEY = 'coinMemberManager.auth.v1';
+const PRICE_KEY = 'coinMemberManager.prices.v2';
+const SESSION_KEY = 'coinMemberManager.session';
+
+
+let db = loadDb();
+let prices = loadJson(PRICE_KEY, {});
+let sort = {key:'name', dir:1};
+let currentDetail = null;
+let timer = null;
+let histCache = {};
+
+function loadJson(k, def){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? def; }catch(e){ return def; } }
+function loadDb(){
+  const d = loadJson(KEY, null);
+  if(d && Array.isArray(d.members)) return d;
+  return {members:[], purchases:[], currency:'USD'};
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(db)); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const usd = n => { const a = Math.abs(n); return (n<0?'-':'') + '$' + a.toLocaleString('en-US',{minimumFractionDigits:a>=1?2:0, maximumFractionDigits:a>=1?2:a>=0.01?4:8}); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => { const d=new Date(); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const cls = v => v>0 ? 'up' : v<0 ? 'down' : '';
+const pct = v => v==null ? '-' : (v>0?'+':'') + v.toFixed(2) + '%';
+const sgn = v => (v>0?'+':'') + usd(v);
+
+/* ================= 로그인 ================= */
+async function hash(s){
+  if(window.crypto && crypto.subtle){
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+  }
+  let h = 5381; for(let i=0;i<s.length;i++) h = ((h<<5)+h+s.charCodeAt(i))>>>0;
+  return 'f' + h;
+}
+function authState(){
+  const acc = loadJson(AUTH_KEY, null);
+  const setup = !acc;
+  $('authTitle').textContent = setup ? '관리자 계정 만들기' : '로그인';
+  $('authDesc').textContent = setup ? '처음 사용하시는군요. 이 앱을 관리할 아이디와 비밀번호를 설정하세요.' : '관리자 아이디와 비밀번호를 입력하세요.';
+  $('aPw2Wrap').style.display = setup ? 'block' : 'none';
+  $('aBtn').textContent = setup ? '계정 만들고 시작' : '로그인';
+  $('aPw').autocomplete = setup ? 'new-password' : 'current-password';
+  $('aErr').textContent = '';
+}
+async function authSubmit(){
+  const id = $('aId').value.trim(), pw = $('aPw').value;
+  const acc = loadJson(AUTH_KEY, null);
+  if(!acc){
+    if(!id) return $('aErr').textContent = '아이디를 입력하세요.';
+    if(pw.length < 4) return $('aErr').textContent = '비밀번호는 4자 이상이어야 합니다.';
+    if(pw !== $('aPw2').value) return $('aErr').textContent = '비밀번호 확인이 일치하지 않습니다.';
+    const salt = uid();
+    localStorage.setItem(AUTH_KEY, JSON.stringify({id, salt, hash: await hash(salt+pw)}));
+    enter(id);
+  }else{
+    if(id !== acc.id || await hash(acc.salt+pw) !== acc.hash){
+      $('aPw').value = ''; return $('aErr').textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+    }
+    enter(id);
+  }
+}
+function enter(id){
+  sessionStorage.setItem(SESSION_KEY, id);
+  $('aPw').value = ''; $('aPw2').value = '';
+  $('auth').style.display = 'none';
+  $('whoami').textContent = id + ' 님';
+  migrateCurrency();
+  renderAll();
+  startTimer();
+}
+function logout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  clearInterval(timer);
+  document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));
+  $('auth').style.display = 'flex';
+  authState();
+  $('aId').value=''; $('aId').focus();
+}
+function openPw(){ $('pwOld').value=$('pwNew').value=$('pwNew2').value=''; $('pwErr').textContent=''; openModal('pwModal'); }
+async function changePw(){
+  const acc = loadJson(AUTH_KEY, null);
+  if(await hash(acc.salt+$('pwOld').value) !== acc.hash) return $('pwErr').textContent = '현재 비밀번호가 올바르지 않습니다.';
+  if($('pwNew').value.length < 4) return $('pwErr').textContent = '새 비밀번호는 4자 이상이어야 합니다.';
+  if($('pwNew').value !== $('pwNew2').value) return $('pwErr').textContent = '새 비밀번호 확인이 일치하지 않습니다.';
+  const salt = uid();
+  localStorage.setItem(AUTH_KEY, JSON.stringify({id:acc.id, salt, hash: await hash(salt+$('pwNew').value)}));
+  closeModal('pwModal'); alert('비밀번호가 변경되었습니다.');
+}
+
+/* ================= 계산 ================= */
+function memberName(id){ const m = db.members.find(x=>x.id===id); return m ? m.name : ''; }
+function calc(ps){
+  const coins = {};
+  ps.forEach(p => { const c = coins[p.coin] ||= {coin:p.coin, qty:0, cost:0}; c.qty += p.qty; c.cost += p.qty*p.price; });
+  let cost = 0, costK = 0, value = 0, missing = false;
+  Object.values(coins).forEach(c => {
+    cost += c.cost;
+    const pr = prices[c.coin]?.price;
+    c.avg = c.qty ? c.cost/c.qty : 0;
+    c.price = pr;
+    if(pr != null){ c.value = c.qty*pr; c.pnl = c.value - c.cost; c.rate = c.cost ? c.pnl/c.cost*100 : null; costK += c.cost; value += c.value; }
+    else missing = true;
+  });
+  const pnl = value - costK;
+  return {coins, cost, costK, value, pnl, rate: costK ? pnl/costK*100 : null, missing};
+}
+function stats(m){
+  const ps = db.purchases.filter(p => p.memberId === m.id);
+  const c = calc(ps);
+  const dates = ps.map(p=>p.date).sort();
+  return {
+    count: ps.length, total: c.cost, rate: c.rate,
+    last: dates[dates.length-1] || '',
+    first: m.firstDate || dates[0] || ''
+  };
+}
+
+/* ================= 렌더링 ================= */
+function renderAll(){ renderMembers(); renderDash(); }
+
+function renderMembers(){
+  const q = $('q').value.trim().toLowerCase();
+  const gf = $('gradeFilter').value;
+  let rows = db.members.map(m => ({m, s:stats(m), ref: memberName(m.referrerId)}));
+  if(q) rows = rows.filter(r => [r.m.name,r.m.nick,r.m.phone,r.m.email,r.m.memo,r.ref].join(' ').toLowerCase().includes(q));
+  if(gf) rows = rows.filter(r => r.m.grade === gf);
+  const val = r => ({name:r.m.name, nick:r.m.nick||'', grade:r.m.grade, ref:r.ref, first:r.s.first, count:r.s.count, total:r.s.total, rate:r.s.rate ?? -1e9})[sort.key];
+  rows.sort((a,b)=>{ const x=val(a), y=val(b); return (x>y?1:x<y?-1:0)*sort.dir; });
+
+  $('tbody').innerHTML = rows.map(({m,s,ref}) => `
+    <tr>
+      <td><b>${esc(m.name)}</b></td>
+      <td>${esc(m.nick)||'-'}</td>
+      <td>${esc(m.phone)||'-'}</td>
+      <td><span class="badge g-${esc(m.grade)}">${esc(m.grade)}</span></td>
+      <td>${esc(ref)||'-'}</td>
+      <td>${s.first||'-'}</td>
+      <td class="num">${s.count}</td>
+      <td class="num">${usd(s.total)}</td>
+      <td class="num ${cls(s.rate)}">${pct(s.rate)}</td>
+      <td>
+        <button class="sm ghost" onclick="openDetail('${m.id}')">내역</button>
+        <button class="sm ghost" onclick="openMember('${m.id}')">수정</button>
+        <button class="sm danger" onclick="delMember('${m.id}')">삭제</button>
+      </td>
+    </tr>`).join('');
+  $('empty').style.display = rows.length ? 'none' : 'block';
+
+  const all = db.members.map(m => ({m, s:stats(m)}));
+  $('sMembers').textContent = db.members.length;
+  $('sCount').textContent = db.purchases.length;
+  $('sAmount').textContent = usd(all.reduce((a,x)=>a+x.s.total,0));
+  const top = all.slice().sort((a,b)=>b.s.total-a.s.total)[0];
+  $('sTop').textContent = top && top.s.total>0 ? `${top.m.name} (${usd(top.s.total)})` : '-';
+}
+function sortBy(k){ if(sort.key===k) sort.dir*=-1; else sort={key:k,dir:1}; renderMembers(); }
+
+function showTab(t){
+  $('tabM').style.display = t==='M' ? 'block':'none';
+  $('tabD').style.display = t==='D' ? 'block':'none';
+  $('tabBtnM').classList.toggle('on', t==='M');
+  $('tabBtnD').classList.toggle('on', t==='D');
+  if(t==='D'){ renderDash(); refreshPrices(); }
+}
+
+/* ================= AVE 시세 (USD) ================= */
+const AVE_BASE = 'https://prod.ave-api.com';
+const AVE_KEY = 'coinMemberManager.aveKey';
+const AVE_TOKENS = 'coinMemberManager.aveTokens';
+let aveTokens = loadJson(AVE_TOKENS, {});
+const getAveKey = () => { try{ return localStorage.getItem(AVE_KEY) || ''; }catch(e){ return ''; } };
+const saveAveTokens = () => localStorage.setItem(AVE_TOKENS, JSON.stringify(aveTokens));
+
+function setPriceStatus(msg){ $('priceStatus').textContent = msg; }
+
+async function aveFetch(path){
+  const key = getAveKey();
+  if(!key) throw new Error('NOKEY');
+  const r = await fetch(AVE_BASE + path, {headers:{'X-API-KEY': key}});
+  if(!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+// 코인 심볼 -> AVE 토큰 조회 (처음엔 키워드 검색, 이후엔 저장된 토큰 ID로 조회)
+async function resolveToken(sym){
+  const known = aveTokens[sym];
+  if(known){
+    const j = await aveFetch('/v2/tokens/' + encodeURIComponent(known));
+    const t = j.data?.token || {};
+    const price = Number(t.current_price_usd);
+    if(!(price >= 0)) throw new Error('가격 정보 없음');
+    return {id:known, price, chain:t.chain || ''};
+  }
+  const j = await aveFetch(`/v2/tokens?keyword=${encodeURIComponent(sym)}&limit=30&orderby=market_cap`);
+  const arr = Array.isArray(j) ? j : Array.isArray(j.data) ? j.data : (j.data?.tokens || []);
+  const exact = arr.filter(x => String(x.symbol || x.token?.symbol || '').toUpperCase() === sym);
+  if(!exact.length) throw new Error(sym + ' 심볼을 찾지 못함');
+  exact.sort((x,y) => (Number(y.market_cap)||0) - (Number(x.market_cap)||0));
+  const t = exact[0];
+  const chain = t.chain || '';
+  const addr = t.token || t.address || t.contract || '';
+  const id = t.token_id || t.id || (addr && chain ? `${addr}-${chain}` : '');
+  const price = Number(t.current_price_usd ?? t.price_usd ?? t.price);
+  if(id){
+    aveTokens[sym] = id; saveAveTokens();
+    if(!(price >= 0)) return resolveToken(sym);
+  }
+  if(!(price >= 0)) throw new Error('가격 정보 없음');
+  return {id, price, chain};
+}
+
+async function refreshPrices(){
+  const syms = [...new Set(db.purchases.map(p=>p.coin))];
+  if(!syms.length){ setPriceStatus('구매 기록이 없습니다.'); renderDash(); return; }
+  if(!getAveKey()){ setPriceStatus('AVE API 키가 필요합니다. "AVE API 키 설정"을 눌러 입력하세요.'); renderDash(); return; }
+  $('refreshBtn').disabled = true; setPriceStatus('AVE 시세 불러오는 중...');
+  const now = Date.now();
+  const res = await Promise.allSettled(syms.map(resolveToken));
+  const failed = []; let lastErr = '';
+  res.forEach((r,i) => {
+    if(r.status === 'fulfilled') prices[syms[i]] = {price:r.value.price, src:'AVE' + (r.value.chain ? ' · ' + r.value.chain : ''), ts:now};
+    else { failed.push(syms[i]); lastErr = r.reason?.message || String(r.reason); }
+  });
+  localStorage.setItem(PRICE_KEY, JSON.stringify(prices));
+  $('refreshBtn').disabled = false;
+  const t = new Date().toLocaleTimeString('ko-KR');
+  if(!failed.length) setPriceStatus(`${t} 갱신 완료 (AVE, USD)`);
+  else if(/HTTP 40[13]/.test(lastErr)) setPriceStatus(`${t} AVE API 키가 올바르지 않거나 만료되었습니다.`);
+  else if(/Failed to fetch|NetworkError/i.test(lastErr)) setPriceStatus(`${t} AVE 서버에 연결하지 못했습니다. (네트워크 또는 브라우저 CORS 차단 가능성)`);
+  else setPriceStatus(`${t} 시세를 가져오지 못한 코인: ${failed.join(', ')} (${lastErr}) — "토큰 지정" 또는 "직접입력"을 사용하세요.`);
+  renderDash();
+}
+function manualPrice(sym){
+  const cur = prices[sym]?.price ?? '';
+  const v = prompt(`${sym} 현재가(USD)를 입력하세요.`, cur);
+  if(v === null) return;
+  const n = Number(v.replace(/[,$\s]/g,''));
+  if(!(n >= 0) || v.trim()===''){ alert('올바른 숫자를 입력하세요.'); return; }
+  prices[sym] = {price:n, src:'직접입력', ts:Date.now()};
+  localStorage.setItem(PRICE_KEY, JSON.stringify(prices));
+  renderAll();
+}
+function setTokenId(sym){
+  const v = prompt(`${sym}에 사용할 AVE 토큰 ID를 입력하세요.\n형식: 토큰주소-체인 (예: 0xabc...-eth)\n비우면 심볼 검색으로 되돌립니다.`, aveTokens[sym] || '');
+  if(v === null) return;
+  if(v.trim()) aveTokens[sym] = v.trim(); else delete aveTokens[sym];
+  saveAveTokens(); delete histCache[sym];
+  refreshPrices();
+}
+function openAve(){ $('aveKeyInput').value = getAveKey(); openModal('aveModal'); $('aveKeyInput').focus(); }
+function saveAve(){
+  const k = $('aveKeyInput').value.trim();
+  if(k) localStorage.setItem(AVE_KEY, k); else localStorage.removeItem(AVE_KEY);
+  histCache = {};
+  closeModal('aveModal');
+  refreshPrices();
+}
+function startTimer(){
+  clearInterval(timer);
+  timer = setInterval(() => { if($('tabD').style.display !== 'none' && !document.hidden) refreshPrices(); }, 300000);
+}
+
+// 예전(원화 단가) 데이터가 있으면 달러로 변환
+function migrateCurrency(){
+  if(db.currency === 'USD') return;
+  if(db.purchases.length){
+    const r = prompt('기존 구매 기록은 원화(KRW) 단가로 저장되어 있습니다.\n달러(USD)로 변환할 환율(1달러 = 몇 원)을 입력하세요.\n취소하면 값을 그대로 두고 달러 단가로 간주합니다.', '1450');
+    if(r !== null){
+      const rate = Number(String(r).replace(/,/g,''));
+      if(rate > 0) db.purchases.forEach(p => { p.price = p.price / rate; });
+    }
+  }
+  db.currency = 'USD'; save();
+}
+
+/* ================= 시세·수익률 대시보드 ================= */
+function renderDash(){
+  const c = calc(db.purchases);
+  $('dCost').textContent = usd(c.cost);
+  $('dValue').textContent = c.costK ? usd(c.value) : '-';
+  $('dPnl').textContent = c.costK ? sgn(c.pnl) : '-';
+  $('dPnl').className = 'v ' + cls(c.pnl);
+  $('dRate').textContent = pct(c.rate);
+  $('dRate').className = 'v ' + cls(c.rate);
+
+  const list = Object.values(c.coins).sort((a,b)=>b.cost-a.cost);
+  $('coinBody').innerHTML = list.map(x => {
+    const p = prices[x.coin];
+    return `<tr>
+      <td><b>${esc(x.coin)}</b></td>
+      <td class="num">${+x.qty.toFixed(8)}</td>
+      <td class="num">${usd(x.avg)}</td>
+      <td class="num">${x.price!=null ? usd(x.price) : '-'}</td>
+      <td class="num">${usd(x.cost)}</td>
+      <td class="num">${x.value!=null ? usd(x.value) : '-'}</td>
+      <td class="num ${cls(x.pnl)}">${x.pnl!=null ? sgn(x.pnl) : '-'}</td>
+      <td class="num ${cls(x.rate)}">${pct(x.rate ?? null)}</td>
+      <td>${p ? esc(p.src) : '-'} <button class="sm ghost" onclick="setTokenId('${esc(x.coin)}')">토큰 지정</button> <button class="sm ghost" onclick="manualPrice('${esc(x.coin)}')">직접입력</button></td>
+    </tr>`;
+  }).join('');
+  $('coinEmpty').style.display = list.length ? 'none' : 'block';
+
+  const known = list.filter(x => x.rate != null);
+  $('chRate').innerHTML = known.length
+    ? barChart(known.map(x=>x.coin), [{name:'수익률', values:known.map(x=>+x.rate.toFixed(2)), colorFn:v=>v>=0?'#e5484d':'#2f6bff'}], v=>v.toFixed(1)+'%', v=>v.toFixed(1)+'%')
+    : emptyChart('시세를 불러오면 표시됩니다.');
+  $('chVal').innerHTML = known.length
+    ? barChart(known.map(x=>x.coin), [
+        {name:'투자금', color:'#9aa6c0', values:known.map(x=>Math.round(x.cost))},
+        {name:'평가금액', color:'#2f6bff', values:known.map(x=>Math.round(x.value))}], shortUsd, shortUsd)
+    : emptyChart('시세를 불러오면 표시됩니다.');
+
+  const mem = db.members.map(m => ({m, c:calc(db.purchases.filter(p=>p.memberId===m.id))})).filter(x => x.c.rate != null);
+  $('chMember').innerHTML = mem.length
+    ? barChart(mem.map(x=>x.m.nick||x.m.name), [{name:'수익률', values:mem.map(x=>+x.c.rate.toFixed(2)), colorFn:v=>v>=0?'#e5484d':'#2f6bff'}], v=>v.toFixed(1)+'%', v=>v.toFixed(1)+'%')
+    : emptyChart('시세를 불러오면 표시됩니다.');
+
+  const sel = $('histCoin'), prev = sel.value;
+  sel.innerHTML = list.map(x=>`<option>${esc(x.coin)}</option>`).join('');
+  if(list.some(x=>x.coin===prev)) sel.value = prev;
+  drawHistory();
+}
+
+async function drawHistory(){
+  if($('tabD').style.display === 'none') return;
+  const sym = $('histCoin').value;
+  if(!sym){ $('chHist').innerHTML = emptyChart('구매한 코인이 없습니다.'); return; }
+  const avg = calc(db.purchases.filter(p=>p.coin===sym)).coins[sym]?.avg;
+  const cached = histCache[sym];
+  if(cached && Date.now()-cached.ts < 300000){ $('chHist').innerHTML = lineChart(cached.pts, avg); return; }
+  if(!getAveKey()){ $('chHist').innerHTML = emptyChart('AVE API 키를 설정하면 표시됩니다.'); return; }
+  $('chHist').innerHTML = emptyChart('불러오는 중...');
+  try{
+    let id = aveTokens[sym];
+    if(!id){ await resolveToken(sym); id = aveTokens[sym]; }
+    if(!id) throw new Error('토큰 ID 없음');
+    const from = Math.floor(Date.now()/1000) - 31*86400;
+    const j = await aveFetch(`/v2/klines/token/${encodeURIComponent(id)}?interval=1440&limit=30&from_time=${from}`);
+    const pts = (j.data?.points || []).slice().sort((x,y)=>x.time-y.time)
+      .map(p => ({x:new Date(p.time*1000).toISOString().slice(5,10), y:Number(p.close)}));
+    if(!pts.length) throw new Error('데이터 없음');
+    histCache[sym] = {pts, ts:Date.now()};
+    if($('histCoin').value === sym) $('chHist').innerHTML = lineChart(pts, avg);
+  }catch(e){
+    if($('histCoin').value === sym) $('chHist').innerHTML = emptyChart('이 코인의 가격 추이를 불러오지 못했습니다. (' + (e.message||'오류') + ')');
+  }
+}
+
+/* ================= SVG 차트 ================= */
+function shortUsd(n){
+  const a = Math.abs(n), sg = n<0 ? '-' : '';
+  if(a === 0) return '$0';
+  if(a >= 1e9) return sg + '$' + (a/1e9).toFixed(1) + 'B';
+  if(a >= 1e6) return sg + '$' + (a/1e6).toFixed(1) + 'M';
+  if(a >= 1e3) return sg + '$' + (a/1e3).toFixed(1) + 'K';
+  if(a >= 100) return sg + '$' + a.toFixed(0);
+  if(a >= 1) return sg + '$' + a.toFixed(2);
+  return sg + '$' + a.toPrecision(2);
+}
+function emptyChart(msg){ return `<div class="empty">${esc(msg)}</div>`; }
+function barChart(labels, series, tickFmt, valFmt){
+  const W=640, H=290, m={l:58,r:14,t:26,b:40};
+  const all = series.flatMap(s=>s.values);
+  let min = Math.min(0, ...all), max = Math.max(0, ...all);
+  if(min === max) max = 1;
+  const pad = (max-min)*0.12; if(max>0) max += pad; if(min<0) min -= pad;
+  const y = v => m.t + (max-v)/(max-min)*(H-m.t-m.b);
+  const y0 = y(0);
+  const gw = (W-m.l-m.r)/labels.length, bw = Math.min(46, gw*0.72/series.length);
+  let g = '';
+  for(let i=0;i<=4;i++){
+    const v = min + (max-min)*i/4, yy = y(v);
+    g += `<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="#e3e7ef"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#6b7488">${tickFmt(v)}</text>`;
+  }
+  g += `<line x1="${m.l}" x2="${W-m.r}" y1="${y0}" y2="${y0}" stroke="#8a93a8"/>`;
+  labels.forEach((lb,i) => {
+    const cx = m.l + gw*i + gw/2, start = cx - bw*series.length/2;
+    series.forEach((s,si) => {
+      const v = s.values[i], yy = y(v), x = start + si*bw;
+      const fill = s.colorFn ? s.colorFn(v) : s.color;
+      g += `<rect x="${x+1}" y="${Math.min(yy,y0)}" width="${bw-2}" height="${Math.max(1,Math.abs(yy-y0))}" fill="${fill}" rx="2"/>`;
+      if(series.length === 1 || labels.length <= 5)
+        g += `<text x="${x+bw/2}" y="${v>=0 ? yy-4 : yy+12}" text-anchor="middle" font-size="10.5" fill="#1d2433">${valFmt(v)}</text>`;
+    });
+    const t = lb.length > 8 ? lb.slice(0,7)+'…' : lb;
+    g += `<text x="${cx}" y="${H-m.b+16}" text-anchor="middle" font-size="12" fill="#1d2433">${esc(t)}</text>`;
+  });
+  if(series.length > 1){
+    series.forEach((s,i) => { g += `<rect x="${m.l+i*90}" y="4" width="10" height="10" fill="${s.color}" rx="2"/><text x="${m.l+i*90+14}" y="13" font-size="11" fill="#6b7488">${esc(s.name)}</text>`; });
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+function lineChart(pts, avg){
+  const W=640, H=290, m={l:70,r:14,t:20,b:34};
+  const ys = pts.map(p=>p.y); if(avg) ys.push(avg);
+  let min = Math.min(...ys), max = Math.max(...ys);
+  const pad = (max-min||max)*0.08; min -= pad; max += pad;
+  const x = i => m.l + (W-m.l-m.r)*i/Math.max(1,pts.length-1);
+  const y = v => m.t + (max-v)/(max-min)*(H-m.t-m.b);
+  let g = '';
+  for(let i=0;i<=4;i++){
+    const v = min+(max-min)*i/4, yy = y(v);
+    g += `<line x1="${m.l}" x2="${W-m.r}" y1="${yy}" y2="${yy}" stroke="#e3e7ef"/><text x="${m.l-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#6b7488">${shortUsd(v)}</text>`;
+  }
+  [0, Math.floor((pts.length-1)/2), pts.length-1].forEach(i => {
+    g += `<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="11" fill="#6b7488">${pts[i].x}</text>`;
+  });
+  g += `<polyline fill="none" stroke="#2f6bff" stroke-width="2" points="${pts.map((p,i)=>x(i)+','+y(p.y)).join(' ')}"/>`;
+  if(avg){
+    g += `<line x1="${m.l}" x2="${W-m.r}" y1="${y(avg)}" y2="${y(avg)}" stroke="#e5484d" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+    g += `<text x="${W-m.r}" y="${y(avg)-5}" text-anchor="end" font-size="11" fill="#e5484d">평균매수가 ${usd(avg)}</text>`;
+  }
+  const last = pts[pts.length-1];
+  g += `<circle cx="${x(pts.length-1)}" cy="${y(last.y)}" r="3.5" fill="#2f6bff"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+
+/* ================= 모달 ================= */
+function openModal(id){ $(id).classList.add('open'); }
+function closeModal(id){ $(id).classList.remove('open'); }
+
+/* 회원 */
+function openMember(id){
+  const m = db.members.find(x=>x.id===id) || {id:'',name:'',nick:'',phone:'',email:'',grade:'일반',memo:'',referrerId:'',firstDate:today()};
+  $('memberTitle').textContent = id ? '회원 수정' : '회원 등록';
+  $('mRef').innerHTML = '<option value="">없음</option>' + db.members.filter(x=>x.id!==id)
+    .map(x=>`<option value="${x.id}">${esc(x.name)}${x.nick?' ('+esc(x.nick)+')':''}</option>`).join('');
+  $('mId').value=m.id; $('mName').value=m.name; $('mNick').value=m.nick||''; $('mPhone').value=m.phone; $('mEmail').value=m.email;
+  $('mGrade').value=m.grade; $('mRef').value=m.referrerId||''; $('mFirst').value=m.firstDate||''; $('mMemo').value=m.memo;
+  openModal('memberModal'); $('mName').focus();
+}
+function saveMember(){
+  const name = $('mName').value.trim();
+  if(!name){ alert('이름을 입력하세요.'); return; }
+  const data = {name, nick:$('mNick').value.trim(), phone:$('mPhone').value.trim(), email:$('mEmail').value.trim(),
+    grade:$('mGrade').value, referrerId:$('mRef').value, firstDate:$('mFirst').value, memo:$('mMemo').value.trim()};
+  if($('mId').value) Object.assign(db.members.find(x=>x.id===$('mId').value), data);
+  else db.members.push({id:uid(), created:today(), ...data});
+  save(); closeModal('memberModal'); renderAll();
+}
+function delMember(id){
+  const m = db.members.find(x=>x.id===id);
+  if(!confirm(`'${m.name}' 회원과 모든 구매 내역을 삭제할까요?`)) return;
+  db.members = db.members.filter(x=>x.id!==id);
+  db.members.forEach(x => { if(x.referrerId===id) x.referrerId=''; });
+  db.purchases = db.purchases.filter(p=>p.memberId!==id);
+  save(); renderAll();
+}
+
+/* 구매 */
+function openPurchase(memberId){
+  if(!db.members.length){ alert('먼저 회원을 등록하세요.'); return; }
+  $('pMember').innerHTML = db.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  if(memberId) $('pMember').value = memberId;
+  $('pCoin').value='BTC'; $('pCustom').value=''; $('pQty').value=''; $('pPrice').value=''; $('pMemo').value=''; $('pDate').value=today();
+  coinChanged(); calcTotal();
+  openModal('purchaseModal'); $('pQty').focus();
+}
+function coinChanged(){ $('pCustomWrap').style.display = $('pCoin').value==='기타' ? 'block' : 'none'; }
+function calcTotal(){ $('pTotal').textContent = usd((+$('pQty').value||0)*(+$('pPrice').value||0)); }
+function savePurchase(){
+  const qty=+$('pQty').value, price=+$('pPrice').value;
+  const coin = $('pCoin').value==='기타' ? $('pCustom').value.trim().toUpperCase() : $('pCoin').value;
+  if(!coin){ alert('코인 심볼을 입력하세요.'); return; }
+  if(!(qty>0) || $('pPrice').value==='' || !(price>=0)){ alert('수량과 단가를 올바르게 입력하세요.'); return; }
+  const mid = $('pMember').value;
+  db.purchases.push({id:uid(), memberId:mid, coin, qty, price, date:$('pDate').value||today(), memo:$('pMemo').value.trim()});
+  save(); closeModal('purchaseModal'); renderAll();
+  if($('detailModal').classList.contains('open')) openDetail(mid);
+  if(prices[coin] == null) refreshPrices();
+}
+
+/* 상세 */
+function openDetail(id){
+  currentDetail = id;
+  const m = db.members.find(x=>x.id===id); if(!m) return;
+  const ps = db.purchases.filter(p=>p.memberId===id).sort((a,b)=>b.date.localeCompare(a.date));
+  const c = calc(ps), s = stats(m);
+  const refs = db.members.filter(x=>x.referrerId===id).map(x=>x.name);
+  $('dTitle').textContent = `${m.name}${m.nick?' ('+m.nick+')':''} 님`;
+  $('dInfo').innerHTML =
+    `${esc(m.phone)||'연락처 없음'} · ${esc(m.email)||'이메일 없음'} · 등급 ${esc(m.grade)}<br>` +
+    `추천인: ${esc(memberName(m.referrerId))||'없음'} · 최초 구매일: ${s.first||'-'} · 이 회원이 추천한 회원: ${refs.length ? esc(refs.join(', ')) : '없음'}<br>` +
+    `총 ${s.count}회 / 투자금 ${usd(c.cost)}` +
+    (c.rate!=null ? ` / 평가 ${usd(c.value)} / <b class="${cls(c.rate)}">${sgn(c.pnl)} (${pct(c.rate)})</b>` : '') +
+    (m.memo ? `<br>메모: ${esc(m.memo)}` : '');
+  $('dBody').innerHTML = ps.map(p => {
+    const cur = prices[p.coin]?.price;
+    const rate = cur!=null && p.price ? (cur/p.price-1)*100 : null;
+    return `<tr><td>${p.date}</td><td><b>${esc(p.coin)}</b></td>
+    <td class="num">${p.qty}</td><td class="num">${usd(p.price)}</td><td class="num">${usd(p.qty*p.price)}</td>
+    <td class="num">${cur!=null ? usd(p.qty*cur) : '-'}</td><td class="num ${cls(rate)}">${pct(rate)}</td>
+    <td>${esc(p.memo)}</td>
+    <td><button class="sm danger" onclick="delPurchase('${p.id}')">삭제</button></td></tr>`;
+  }).join('');
+  $('dEmpty').style.display = ps.length ? 'none':'block';
+  openModal('detailModal');
+}
+function delPurchase(pid){
+  if(!confirm('이 구매 기록을 삭제할까요?')) return;
+  db.purchases = db.purchases.filter(p=>p.id!==pid);
+  save(); renderAll(); openDetail(currentDetail);
+}
+
+/* ================= 내보내기/가져오기 ================= */
+function download(name, content, type){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+function exportCSV(){
+  const cell = v => '"' + String(v??'').replace(/"/g,'""') + '"';
+  const head = ['회원명','닉네임','연락처','이메일','등급','추천인','구매일','코인','수량','매수단가(USD)','투자금(USD)','현재가(USD)','수익률(%)','메모'];
+  const lines = [head.map(cell).join(',')];
+  db.purchases.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{
+    const m = db.members.find(x=>x.id===p.memberId) || {};
+    const cur = prices[p.coin]?.price;
+    const rate = cur!=null && p.price ? ((cur/p.price-1)*100).toFixed(2) : '';
+    lines.push([m.name,m.nick,m.phone,m.email,m.grade,memberName(m.referrerId),p.date,p.coin,p.qty,p.price,p.qty*p.price,cur??'',rate,p.memo].map(cell).join(','));
+  });
+  download(`coin-members-${today()}.csv`, '\uFEFF'+lines.join('\n'), 'text/csv;charset=utf-8');
+}
+function exportJSON(){ download(`coin-members-backup-${today()}.json`, JSON.stringify(db,null,2), 'application/json'); }
+function importJSON(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      if(!Array.isArray(d.members) || !Array.isArray(d.purchases)) throw 0;
+      if(!confirm('현재 데이터를 백업 파일 내용으로 덮어씁니다. 계속할까요?')) return;
+      db = {members:d.members, purchases:d.purchases, currency:d.currency}; migrateCurrency(); renderAll();
+    }catch(err){ alert('올바른 백업 파일이 아닙니다.'); }
+  };
+  r.readAsText(f); e.target.value='';
+}
+
+/* ================= 시작 ================= */
+document.querySelectorAll('.modal-bg').forEach(bg =>
+  bg.addEventListener('mousedown', ev => { if(ev.target===bg) bg.classList.remove('open'); }));
+$('aId').addEventListener('keydown', e => { if(e.key==='Enter') $('aPw').focus(); });
+
+if(sessionStorage.getItem(SESSION_KEY) && loadJson(AUTH_KEY, null)){
+  enter(sessionStorage.getItem(SESSION_KEY));
+}else{
+  authState();
+}
+</script>
+</body>
+</html>
